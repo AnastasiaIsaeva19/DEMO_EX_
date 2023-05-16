@@ -1,0 +1,51 @@
+Парсинг и предобработка данных
+#Импортирование необходимых библиотек
+import pandas as pd
+import numpy as np
+from pprint import pprint
+import codecs
+import json
+import glob
+pd.set_option('display.max_columns', None)
+from pandas import json_normalize
+
+
+#Путь к файлам .geojson
+path = 'Data'
+file = glob.glob(path + "/*.json")
+
+
+#Цикл для получения файла и его загрузки, используя json.load 
+df_data=[]
+for filename in file:
+    name = filename.split("\\")[-1][:-5]
+    
+    with codecs.open(filename, 'r', 'utf-8-sig') as json_file:  
+        data = json.load(json_file)
+           
+    for article in data['refs']:
+        if article!=None:
+            df_data.append([name, article[0], article[1]['day'], article[1]['month'], article[1]['time']])
+            
+df_full=pd.DataFrame(data=df_data,columns=['Название файла', 'Пост', 'день публикации', 'месяц публикации', 'время публикации'])
+
+df_full.head(5)
+
+Обработка текста
+import pymorphy2
+import re
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+sw = stopwords.words('russian')
+morph = pymorphy2.MorphAnalyzer()
+
+def clear_text(text):
+    text=text.lower()
+    text = re.sub(r'[^а-яё ]','', str(text))
+    tokens=word_tokenize(text, language="russian")
+    tokens = [morph.parse(i)[0].normal_form for i in tokens]
+    tokens = [ i for i in tokens if i not in sw and len(i) > 3]
+    return tokens
+
+tk['lemmatize_tokens'] = tk['Post'].apply(clear_text)
